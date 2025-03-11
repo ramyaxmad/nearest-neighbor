@@ -1,5 +1,7 @@
 import numpy as np
-import random
+import time
+#import random
+
 #search part and cross validation part is separate 
 # k-fold cross validation 
 # accuracy = number of correct classifications/number of instances in our database 
@@ -11,11 +13,13 @@ def leave_one_out_cross_validation(orig_data, current_set, feature_to_add):
     # features not within the current set should be ignored 
     # set the features not within the current set all to 0 to ignore them (columns)
     # ex, current set is 1,4,7 and there are 10 columns of features --> make rows 2,3,5... temporarily 0
-    selected_features = current_set + [feature_to_add]  # Include the new feature
+    if feature_to_add is not None:
+        selected_features = current_set + [feature_to_add]  
+    else:
+        selected_features = current_set  # No addition in backward elimination
     data = np.zeros_like(orig_data)
-    data[:, 0] = orig_data[:, 0]  # Preserve class labels
-    data[:, selected_features] = orig_data[:, selected_features]  # Keep only selected features
-
+    data[:, 0] = orig_data[:, 0]  # keep class labels
+    data[:, selected_features] = orig_data[:, selected_features]  # keep only selected features
     
     number_correctly_classified = 0
     for i in range(1, data.shape[0]): #number of rows in data
@@ -49,7 +53,7 @@ def leave_one_out_cross_validation(orig_data, current_set, feature_to_add):
 
         if label_object_to_classify == nearest_neighbor_label:
             number_correctly_classified += 1
-    accuracy = number_correctly_classified / data.shape[0] #number i got correct / number i could have got correct
+    accuracy = round(number_correctly_classified / data.shape[0], 2) #number i got correct / number i could have got correct
     return accuracy
 
 #search algorithm
@@ -69,7 +73,7 @@ def feature_search_demo(data): #data is the dataset
                 print(f"--Considering adding the {k} feature") #at each level look at the remaining features
                 # accuracy = random.uniform(0, 1) #random for now 
                 accuracy = leave_one_out_cross_validation(data, current_set_of_features, k) #accuracy = cross validation accuracy
-                print(f"Using feature(s) {current_set_of_features + [k]} accuracy is {accuracy*100}%")
+                print(f"Using feature(s) {current_set_of_features + [k]} accuracy is {accuracy*100:.1f}%")
                 
                 if accuracy > best_so_far_accuracy:
                     best_so_far_accuracy = accuracy
@@ -83,8 +87,51 @@ def feature_search_demo(data): #data is the dataset
             best_feature_set = current_set_of_features.copy()  # Store a copy of the best feature set
 
     print("Finished search")
-    print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100}%") 
+    print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100:.1f}%") 
     return 
+
+def backward_elimination(data):
+    print("This dataset has",data.shape[1] - 1,"features with", data.shape[0],"instances")
+    print("Beginning search")
+
+    current_set_of_features = list(range(1, data.shape[1]))
+    print(current_set_of_features)
+    best_feature_set = current_set_of_features.copy()
+    best_accuracy = leave_one_out_cross_validation(data, current_set_of_features, feature_to_add=None)
+
+    for i in range(1, data.shape[1]): #number of columns - 1 --> should iterate through set of features 
+        print(f"On the {i}th level of the search tree") #walk down the level of the tree
+        feature_to_remove_at_this_level = 0
+        best_so_far_accuracy = 0
+
+        for k in current_set_of_features:  #number of column - 1
+            print(f"--Considering removing the {k} feature") #at each level look at the remaining features
+            # accuracy = random.uniform(0, 1) #random for now 
+            temp_set = current_set_of_features.copy()
+            temp_set.remove(k)
+            accuracy = leave_one_out_cross_validation(data, temp_set, None) #accuracy = cross validation accuracy
+            print(f"Using feature(s) {temp_set} accuracy is {accuracy*100:.1f}%")
+                
+            if accuracy > best_so_far_accuracy:
+                best_so_far_accuracy = accuracy
+                feature_to_remove_at_this_level = k #remember the feature removed (k) that gives us that accuracy
+
+        if feature_to_remove_at_this_level is not None:
+            current_set_of_features.remove(feature_to_remove_at_this_level)
+            print(f"On level {i} i added feature {current_set_of_features} to current set") #display the highest random number --> best feature to print
+        if best_so_far_accuracy > best_accuracy:
+            best_accuracy = best_so_far_accuracy
+            best_feature_set = current_set_of_features.copy()  # Store a copy of the best feature set
+
+    print("Finished search")
+    print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100}%") 
+    return
+
+def default_rate(data):
+    most_common_size = 0
+    dataset_size = data.shape[0]
+    default = round(most_common_size / dataset_size, 2)
+    return default
 
 def main():
     print("Welcome to Ramya's Feature Selection Algorithm")
@@ -94,11 +141,15 @@ def main():
     print("\n(1) Forward Selection \n(2) Backward Elimination")
     choice = input("Which algorithm would you like to run?  ")
     data = np.loadtxt('CS170_Small_Data__90.txt')
+    start_time = time.time()
     if choice == '1':
         feature_search_demo(data)
     if choice == '2':
-        pass
-    
+        backward_elimination(data)
+    end_time = time.time()
+    elapsed_time = end_time - start_time  # calculate elapsed time
+    print(f"\nTime: {elapsed_time:.2f} seconds")  
+
     return 
 
 main()
