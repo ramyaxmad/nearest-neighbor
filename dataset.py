@@ -13,14 +13,14 @@ def leave_one_out_cross_validation(orig_data, current_set, feature_to_add):
     # features not within the current set should be ignored 
     # set the features not within the current set all to 0 to ignore them (columns)
     # ex, current set is 1,4,7 and there are 10 columns of features --> make rows 2,3,5... temporarily 0
+    selected_features = current_set
     if feature_to_add is not None:
         selected_features = current_set + [feature_to_add]  
-    else:
-        selected_features = current_set  # No addition in backward elimination
+  # No addition in backward elimination
     data = np.zeros_like(orig_data)
     data[:, 0] = orig_data[:, 0]  # keep class labels
     data[:, selected_features] = orig_data[:, selected_features]  # keep only selected features
-    
+
     number_correctly_classified = 0
     for i in range(1, data.shape[0]): #number of rows in data
         object_to_classify = data[i, 1:] #array of features
@@ -51,15 +51,23 @@ def leave_one_out_cross_validation(orig_data, current_set, feature_to_add):
         # print("Object ", i, " is class ", label_object_to_classify)
         # print("its nearest neighbor is ", nearest_neighbor_location, " which is in class ", nearest_neighbor_label)
 
-        if label_object_to_classify == nearest_neighbor_label:
+        if label_object_to_classify == nearest_neighbor_label: # if it is feature 2 and it is actually feature 2 then that is correct 
             number_correctly_classified += 1
-    accuracy = round(number_correctly_classified / data.shape[0], 2) #number i got correct / number i could have got correct
+    accuracy = number_correctly_classified / data.shape[0] #number i got correct / number i could have got correct
     return accuracy
 
 #search algorithm
 def feature_search_demo(data): #data is the dataset 
     print("This dataset has",data.shape[1] - 1,"features with", data.shape[0],"instances")
-    print("Beginning search")
+    print("Beginning FORWARD SELETION search")
+
+    #calculate default rate first 
+    class_labels = data[:, 0]
+    count_ones = np.sum(class_labels == 1.0)
+    count_twos = np.sum(class_labels == 2.0)
+    default_rate = max(count_ones,count_twos)/data.shape[0]
+    print(f"Default Rate [] is {default_rate*100:.1f}%")
+
     best_feature_set = []
     best_accuracy = 0
     current_set_of_features = [] #start with empty set of no featues (forward selection)
@@ -81,24 +89,26 @@ def feature_search_demo(data): #data is the dataset
                     #so feature_to_add_at_this_level only 1 feature??
 
         current_set_of_features.append(feature_to_add_at_this_level)
-        print(f"On level {i} i added feature {feature_to_add_at_this_level} to current set") #display the highest random number --> best feature to print
+        print(f"On level {i} i added feature {feature_to_add_at_this_level} to current set, {current_set_of_features} with accuracy {best_so_far_accuracy*100:.1f}%") #display the highest random number --> best feature to print
+        
         if best_so_far_accuracy > best_accuracy:
             best_accuracy = best_so_far_accuracy
             best_feature_set = current_set_of_features.copy()  # Store a copy of the best feature set
-
     print("Finished search")
     print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100:.1f}%") 
     return 
 
 def backward_elimination(data):
     print("This dataset has",data.shape[1] - 1,"features with", data.shape[0],"instances")
-    print("Beginning search")
+    print("Beginning BACKWARD ELIMINATION search")
 
     current_set_of_features = list(range(1, data.shape[1]))
-    print(current_set_of_features)
+    #print(current_set_of_features)
     best_feature_set = current_set_of_features.copy()
     best_accuracy = leave_one_out_cross_validation(data, current_set_of_features, feature_to_add=None)
-
+    print(f"On the {0}th level of the search tree") #walk down the level of the tree
+    print(f"Using feature(s) {best_feature_set} accuracy is {best_accuracy*100:.1f}%")
+              
     for i in range(1, data.shape[1]): #number of columns - 1 --> should iterate through set of features 
         print(f"On the {i}th level of the search tree") #walk down the level of the tree
         feature_to_remove_at_this_level = 0
@@ -116,31 +126,24 @@ def backward_elimination(data):
                 best_so_far_accuracy = accuracy
                 feature_to_remove_at_this_level = k #remember the feature removed (k) that gives us that accuracy
 
-        if feature_to_remove_at_this_level is not None:
-            current_set_of_features.remove(feature_to_remove_at_this_level)
-            print(f"On level {i} i added feature {current_set_of_features} to current set") #display the highest random number --> best feature to print
+        current_set_of_features.remove(feature_to_remove_at_this_level)
+        print(f"On level {i} i removed {feature_to_remove_at_this_level} for current set {current_set_of_features}, accuracy is {best_so_far_accuracy*100:.1f}%") #display the highest random number --> best feature to print
         if best_so_far_accuracy > best_accuracy:
             best_accuracy = best_so_far_accuracy
             best_feature_set = current_set_of_features.copy()  # Store a copy of the best feature set
 
     print("Finished search")
-    print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100}%") 
+    print(f"Feature set {best_feature_set} was best, accuracy is {best_accuracy * 100:.1f}%") 
     return
-
-def default_rate(data):
-    most_common_size = 0
-    dataset_size = data.shape[0]
-    default = round(most_common_size / dataset_size, 2)
-    return default
 
 def main():
     print("Welcome to Ramya's Feature Selection Algorithm")
     # name = input("Type in the name of the file to test: ")
     # data = np.loadtxt(name)
-
+    data = np.loadtxt('CS170_Large_Data__98.txt')
     print("\n(1) Forward Selection \n(2) Backward Elimination")
     choice = input("Which algorithm would you like to run?  ")
-    data = np.loadtxt('CS170_Small_Data__90.txt')
+
     start_time = time.time()
     if choice == '1':
         feature_search_demo(data)
@@ -153,3 +156,8 @@ def main():
     return 
 
 main()
+
+#make code faster 
+#vectorization 
+# write with no loops impleticatly loop 
+# caching - those numbers - few seconds 
