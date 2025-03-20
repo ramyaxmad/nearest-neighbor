@@ -153,6 +153,7 @@ void backward_elimination(const vector<vector<double> >& data) {
         }
 
         current_set_of_features.erase(remove(current_set_of_features.begin(), current_set_of_features.end(), feature_to_remove_at_this_level), current_set_of_features.end());
+        cout << "On level " << i << " i removed feature " << feature_to_remove_at_this_level << " to current set, accuracy is " << best_so_far_accuracy * 100 << "%" << endl;
 
         if (best_so_far_accuracy > best_accuracy) {
             best_accuracy = best_so_far_accuracy;
@@ -171,7 +172,7 @@ int main() {
     cout << "Welcome to Ramya's Feature Selection Algorithm" << endl;
 
     vector<vector<double> > data;
-    ifstream file("CS170_Large_Data__10.txt");
+    ifstream file("CS170_Large_Data__98.txt");
 
     string line;
     while (getline(file, line)) {

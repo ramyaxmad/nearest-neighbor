@@ -138,12 +138,13 @@ def backward_elimination(data):
 
 def main():
     print("Welcome to Ramya's Feature Selection Algorithm")
-    # name = input("Type in the name of the file to test: ")
-    # data = np.loadtxt(name)
-    data = np.loadtxt('CS170_Large_Data__98.txt')
+    name = input("Type in the name of the file to test: ")
+    data = np.loadtxt(name)
+    data = np.loadtxt('CS170_Small_Data__61.txt')
     print("\n(1) Forward Selection \n(2) Backward Elimination")
     choice = input("Which algorithm would you like to run?  ")
-
+    print(data.shape[1])
+    print(data.shape[0])
     start_time = time.time()
     if choice == '1':
         feature_search_demo(data)
